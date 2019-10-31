@@ -1,6 +1,6 @@
-# Mun Runtime C++ Bindings
+# Mun Runtime FFI Bindings
 
-C++17 bindings for the Mun Runtime.
+C and C++17 bindings for the Mun Runtime.
 
 ## License
 
