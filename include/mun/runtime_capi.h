@@ -145,7 +145,12 @@ const char *mun_error_message(MunErrorHandle error_handle);
  *
  * The runtime must be manually destructed using [`mun_runtime_destroy`].
  *
- * TOOD: expose interval at which the runtime's file watcher operates.
+ * TODO: expose interval at which the runtime's file watcher operates.
+ *
+ * # Safety
+ *
+ * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
+ * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
 MunErrorHandle mun_runtime_create(const char *library_path, MunRuntimeHandle *handle);
 
@@ -160,6 +165,11 @@ void mun_runtime_destroy(MunRuntimeHandle handle);
  *
  * If a non-zero error handle is returned, it must be manually destructed using
  * [`mun_error_destroy`].
+ *
+ * # Safety
+ *
+ * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
+ * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
 MunErrorHandle mun_runtime_get_function_info(MunRuntimeHandle handle,
                                              const char *fn_name,
@@ -172,6 +182,11 @@ MunErrorHandle mun_runtime_get_function_info(MunRuntimeHandle handle,
  *
  * If a non-zero error handle is returned, it must be manually destructed using
  * [`mun_error_destroy`].
+ *
+ * # Safety
+ *
+ * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
+ * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
 MunErrorHandle mun_runtime_update(MunRuntimeHandle handle, bool *updated);
 
