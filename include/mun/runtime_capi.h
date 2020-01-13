@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /**
- * A type that represents the privacy level of modules, functions, or variables.
+ * Represents the privacy level of modules, functions, or variables.
  */
 enum MunPrivacy
 #ifdef __cplusplus
@@ -25,6 +25,27 @@ enum MunPrivacy
 };
 #ifndef __cplusplus
 typedef uint8_t MunPrivacy;
+#endif // __cplusplus
+
+/**
+ * Represents a group of types that illicit the same characteristics.
+ */
+enum MunTypeGroup
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+    /**
+     * Fundamental types (i.e. `()`, `bool`, `float`, `int`, etc.)
+     */
+    FundamentalTypes = 0,
+    /**
+     * Struct types (i.e. record, tuple, or unit structs)
+     */
+    StructTypes = 1,
+};
+#ifndef __cplusplus
+typedef uint8_t MunTypeGroup;
 #endif // __cplusplus
 
 typedef uintptr_t MunToken;
@@ -73,6 +94,10 @@ typedef struct {
      * Type name
      */
     const char *name;
+    /**
+     * Type group
+     */
+    MunTypeGroup group;
 } MunTypeInfo;
 
 /**
