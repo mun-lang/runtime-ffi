@@ -1,7 +1,6 @@
 #ifndef MUN_RUNTIME_CPP_BINDINGS_H_
 #define MUN_RUNTIME_CPP_BINDINGS_H_
 
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -10,126 +9,11 @@
 #include <variant>
 
 #include "mun/invoke_result.h"
+#include "mun/md5.h"
+#include "mun/reflection.h"
 #include "mun/runtime_capi.h"
 
 namespace mun {
-    namespace details {
-        template <typename Arg>
-        constexpr bool valid_arg(const MunTypeInfo& arg_type) {
-            auto output_guid = type_guid<Arg>();
-            return std::equal(std::begin(arg_type.guid.b), std::end(arg_type.guid.b), std::begin(output_guid.b), std::end(output_guid.b));
-        }
-
-        template <typename Arg1, typename Arg2>
-        constexpr bool equal_args() {
-            auto arg1_guid = type_guid<Arg1>();
-            auto arg2_guid = type_guid<Arg2>();
-            return std::equal(std::begin(arg1_guid.b), std::end(arg1_guid.b), std::begin(arg2_guid.b), std::end(arg2_guid.b));
-        }
-
-        template <typename Output, typename... Args>
-        constexpr bool valid_fn(const MunFunctionSignature& signature) noexcept {
-            constexpr auto NUM_ARGS = sizeof...(Args);
-
-            if (signature.num_arg_types != NUM_ARGS) {
-                std::cerr << "Invalid number of arguments. Expected: " << std::to_string(NUM_ARGS) <<
-                    ". Found: " << std::to_string(signature.num_arg_types) << "." << std::endl;
-
-                return false;
-            }
-
-            if constexpr (NUM_ARGS > 0) {
-                const MunTypeInfo* arg_ptr = signature.arg_types;
-                const bool valid_args[] = { valid_arg<Args>(*(arg_ptr++))... };
-                for (size_t idx = 0; idx < NUM_ARGS; ++idx) {
-                    if (!valid_args[idx]) {
-                        const char* arg_names[] = { type_name<Args>()... };
-                        std::cerr << "Invalid argument type at index " << idx <<
-                            ". Expected: " << signature.arg_types[idx].name <<
-                            ". Found: " << arg_names[idx] << "." << std::endl;
-
-                        return false;
-                    }
-                }
-            }
-
-            if (signature.return_type) {
-                if (!valid_arg<Output>(*signature.return_type)) {
-                    std::cerr << "Invalid return type. Expected: " << signature.return_type->name <<
-                        ". Found: " << type_name<Output>() << "." << std::endl;
-
-                    return false;
-                }
-            } else if (!equal_args<void, Output>()) {
-                std::cerr << "Invalid return type. Expected: " << type_name<void>() <<
-                    ". Found: " << type_name<Output>() << "." << std::endl;
-
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    // TODO: Automate the generation of GUIDs
-    template<typename T>
-    constexpr MunGuid type_guid() {
-        static_assert(false, "Unknown type")
-    }
-
-    template<typename T>
-    constexpr const char* type_name() {
-        static_assert(false, "Unknown type")
-    }
-
-    template<>
-    constexpr MunGuid type_guid<bool>() {
-        return MunGuid{
-            { 0x03, 0xFA, 0xAC, 0xFA, 0x7E, 0xDE, 0x4B, 0x12, 0xF6, 0x12, 0xD4, 0x9C, 0xFE, 0x3F, 0x10, 0xE6 }
-        };
-    }
-
-    template<>
-    constexpr const char* type_name<bool>() {
-        return "@core::bool";
-    }
-
-    template<>
-    constexpr MunGuid type_guid<double>() {
-        return MunGuid{
-            { 0x8F, 0x8E, 0xD6, 0x87, 0x0D, 0x83, 0x6E, 0x21, 0xAC, 0xE9, 0xD6, 0x13, 0xA1, 0x15, 0x2A, 0x82 }
-        };
-    }
-
-    template<>
-    constexpr const char* type_name<double>() {
-        return "@core::float";
-    }
-
-    template<>
-    constexpr MunGuid type_guid<int64_t>() {
-        return MunGuid{
-            { 0x8F, 0x98, 0xD1, 0x54, 0x80, 0x89, 0xEF, 0x34, 0xAF, 0x52, 0x15, 0xA0, 0x0F, 0x66, 0x2F, 0x72 }
-        };
-    }
-
-    template<>
-    constexpr const char* type_name<int64_t>() {
-        return "@core::int";
-    }
-
-    template<>
-    constexpr MunGuid type_guid<void>() {
-        return MunGuid{
-            { 0xCA, 0x52, 0x9E, 0x9E, 0x4F, 0xF7, 0x2A, 0x0E, 0x01, 0xAE, 0x40, 0xAD, 0x28, 0x75, 0x7C, 0x44 }
-        };
-    }
-
-    template<>
-    constexpr const char* type_name<void>() {
-        return "@core::empty";
-    }
-
     /** A wrapper around a `MunErrorHandle`.
      *
      * Frees the corresponding error object on destruction, if it exists.
@@ -285,26 +169,73 @@ namespace mun {
      */
     template <typename Output, typename... Args>
     InvokeResult<Output, Args...> invoke_fn(Runtime& runtime, std::string_view fn_name, Args... args) noexcept {
+        auto make_error = [](Runtime& runtime, std::string_view fn_name, Args... args) {
+            return InvokeResult<Output, Args...>(
+                [&runtime, fn_name](Args... fn_args) { return invoke_fn<Output, Args...>(runtime, fn_name, fn_args...); },
+                [&runtime]() { return runtime.update(); },
+                std::move(args)...
+            );
+        };
+
         Error error;
+        constexpr auto NUM_ARGS = sizeof...(Args);
         if (auto fn_info = runtime.get_function_info(fn_name, &error); !fn_info) {
             std::cerr << "Failed to retrieve function info due to error: " << error.message() << std::endl;
         } else if (!fn_info) {
             std::cerr << "Failed to obtain function '" << fn_name << "'" << std::endl;
-        } else if (details::valid_fn<Output, Args...>(fn_info->signature)) {
-            auto fn = reinterpret_cast<Output(*)(Args...)>(fn_info->fn_ptr);
+        } else {
+            const auto& signature = fn_info->signature;
+            if (signature.num_arg_types != NUM_ARGS) {
+                std::cerr << "Invalid number of arguments. Expected: " << std::to_string(signature.num_arg_types) <<
+                    ". Found: " << std::to_string(NUM_ARGS) << "." << std::endl;
+
+                return make_error(runtime, fn_name, args...);
+            }
+
+            if constexpr (NUM_ARGS > 0) {
+                const MunTypeInfo* const* arg_ptr = signature.arg_types;
+                const std::optional<std::pair<const char*, const char*>> return_type_diffs[] = {
+                    reflection::equals_argument_type(**(arg_ptr++), args)...
+                };
+
+                for (size_t idx = 0; idx < NUM_ARGS; ++idx) {
+                    if (auto diff = return_type_diffs[idx]) {
+                        const auto& [expected, found] = *diff;
+                        std::cerr << "Invalid argument type at index " << idx <<
+                            ". Expected: " << expected <<
+                            ". Found: " << found << "." << std::endl;
+
+                        return make_error(runtime, fn_name, args...);
+                    }
+                }
+            }
+
+            if (signature.return_type) {
+                const auto& return_type = signature.return_type;
+                if (auto diff = reflection::equals_return_type<Output>(*return_type)) {
+                    const auto& [expected, found] = *diff;
+                    std::cerr << "Invalid return type. Expected: " << expected <<
+                        ". Found: " << found << "." << std::endl;
+
+                    return make_error(runtime, fn_name, args...);
+                }
+            } else if (!reflection::equal_types<void, Output>()) {
+                std::cerr << "Invalid return type. Expected: " << ReturnTypeReflection<void>::type_name() <<
+                    ". Found: " << ReturnTypeReflection<Output>::type_name() << "." << std::endl;
+
+                return make_error(runtime, fn_name, args...);;
+            }
+
+            auto fn = reinterpret_cast<typename Marshal<Output>::type(*)(typename Marshal<Args>::type...)>(fn_info->fn_ptr);
             if constexpr (std::is_same_v<Output, void>) {
                 fn(args...);
                 return InvokeResult<Output, Args...>(std::monostate {});
             } else {
-                return InvokeResult<Output, Args...>(fn(args...));
+                return InvokeResult<Output, Args...>(Marshal<Output>::from(fn(Marshal<Args>::to(args)...), *signature.return_type));
             }
         }
 
-        return InvokeResult<Output, Args...>(
-            [&runtime, fn_name](Args... fn_args) { return invoke_fn<Output, Args...>(runtime, fn_name, fn_args...); },
-            [&runtime]() { return runtime.update(); },
-            std::move(args)...
-        );
+        return make_error(runtime, fn_name, args...);
     }
 }
 
