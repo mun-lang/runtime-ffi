@@ -146,6 +146,38 @@ typedef struct {
     const void *fn_ptr;
 } MunFunctionInfo;
 
+/**
+ * Represents a struct declaration.
+ *
+ * <div rustbindgen derive="Clone" derive="Debug"></div>
+ */
+typedef struct {
+    /**
+     * Struct name
+     */
+    const char *name;
+    /**
+     * Struct fields' names
+     */
+    const char *const *field_names;
+    /**
+     * Struct fields' information
+     */
+    const MunTypeInfo *const *field_types;
+    /**
+     * Struct fields' offsets
+     */
+    const uint16_t *field_offsets;
+    /**
+     * Struct fields' sizes (in bytes)
+     */
+    const uint16_t *field_sizes;
+    /**
+     * Number of fields
+     */
+    uint16_t num_fields;
+} MunStructInfo;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -214,6 +246,20 @@ MunErrorHandle mun_runtime_get_function_info(MunRuntimeHandle handle,
  * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
 MunErrorHandle mun_runtime_update(MunRuntimeHandle handle, bool *updated);
+
+/**
+ * Retrieves the [`StructInfo`] corresponding to `type_info`, if the type is a struct. If
+ * successful, `struct_info` is set, otherwise a non-zero error handle is returned.
+ *
+ * If a non-zero error handle is returned, it must be manually destructed using
+ * [`mun_error_destroy`].
+ *
+ * # Safety
+ *
+ * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
+ * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
+ */
+MunErrorHandle mun_type_info_as_struct(const MunTypeInfo *type_info, MunStructInfo *struct_info);
 
 #ifdef __cplusplus
 } // extern "C"
