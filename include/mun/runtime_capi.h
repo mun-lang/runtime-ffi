@@ -28,6 +28,31 @@ typedef uint8_t MunPrivacy;
 #endif // __cplusplus
 
 /**
+ * Represents the kind of memory management a struct uses.
+ */
+enum MunStructMemoryKind
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+    /**
+     * A garbage collected struct is allocated on the heap and uses reference semantics when passed
+     * around.
+     */
+    GC,
+    /**
+     * A value struct is allocated on the stack and uses value semantics when passed around.
+     *
+     * NOTE: When a value struct is used in an external API, a wrapper is created that _pins_ the
+     * value on the heap. The heap-allocated value needs to be *manually deallocated*!
+     */
+    Value,
+};
+#ifndef __cplusplus
+typedef uint8_t MunStructMemoryKind;
+#endif // __cplusplus
+
+/**
  * Represents a group of types that illicit the same characteristics.
  */
 enum MunTypeGroup
@@ -176,6 +201,10 @@ typedef struct {
      * Number of fields
      */
     uint16_t num_fields;
+    /**
+     * Struct memory kind
+     */
+    MunStructMemoryKind memory_kind;
 } MunStructInfo;
 
 #ifdef __cplusplus
