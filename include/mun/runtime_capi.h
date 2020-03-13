@@ -202,6 +202,10 @@ typedef struct {
      */
     uint16_t num_fields;
     /**
+     * Struct memory alignment
+     */
+    uint16_t alignment;
+    /**
      * Struct memory kind
      */
     MunStructMemoryKind memory_kind;
