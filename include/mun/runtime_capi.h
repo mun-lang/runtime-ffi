@@ -122,11 +122,11 @@ typedef struct {
     /**
      * The exact size of the type in bits without any padding
      */
-    uint64_t size_in_bits;
+    uint32_t size_in_bits;
     /**
      * The alignment of the type
      */
-    uint32_t alignment;
+    uint8_t alignment;
     /**
      * Type group
      */
