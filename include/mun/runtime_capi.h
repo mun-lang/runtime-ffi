@@ -120,6 +120,14 @@ typedef struct {
      */
     const char *name;
     /**
+     * The exact size of the type in bits without any padding
+     */
+    uint32_t size_in_bits;
+    /**
+     * The alignment of the type
+     */
+    uint8_t alignment;
+    /**
      * Type group
      */
     MunTypeGroup group;
@@ -194,17 +202,9 @@ typedef struct {
      */
     const uint16_t *field_offsets;
     /**
-     * Struct fields' sizes (in bytes)
-     */
-    const uint16_t *field_sizes;
-    /**
      * Number of fields
      */
     uint16_t num_fields;
-    /**
-     * Struct memory alignment
-     */
-    uint16_t alignment;
     /**
      * Struct memory kind
      */
