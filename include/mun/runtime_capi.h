@@ -68,6 +68,10 @@ enum MunTypeGroup
      * Struct types (i.e. record, tuple, or unit structs)
      */
     StructTypes = 1,
+    /**
+     * Array types (i.e. [int], [bool])
+     */
+    ArrayTypes = 2,
 };
 #ifndef __cplusplus
 typedef uint8_t MunTypeGroup;
