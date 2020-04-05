@@ -1,7 +1,7 @@
 #ifndef MUN_RUNTIME_BINDINGS_H_
 #define MUN_RUNTIME_BINDINGS_H_
 
-/* Generated with cbindgen:0.12.1 */
+/* Generated with cbindgen:0.14.0 */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -185,6 +185,10 @@ typedef struct {
  * <div rustbindgen derive="Clone" derive="Debug"></div>
  */
 typedef struct {
+    /**
+     * Struct name
+     */
+    const char *name;
     /**
      * Struct fields' names
      */
