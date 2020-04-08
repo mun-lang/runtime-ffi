@@ -186,10 +186,6 @@ typedef struct {
  */
 typedef struct {
     /**
-     * Struct name
-     */
-    const char *name;
-    /**
      * Struct fields' names
      */
     const char *const *field_names;
