@@ -1,50 +1,52 @@
 #ifndef MUN_MARSHAL_H_
 #define MUN_MARSHAL_H_
 
-#include "mun/runtime_capi.h"
+#include "mun/runtime.h"
 
 namespace mun {
-    template <typename T>
-    struct Marshal;
+template <typename T>
+struct Marshal;
 
-    template <>
-    struct Marshal<int64_t> {
-        using type = int64_t;
-
-        static int64_t from(type value, const MunTypeInfo&) noexcept {
-            return value;
-        }
-
-        static type to(type value) noexcept {
-            return value;
-        }
+#define IMPL_PRIMITIVE_TYPE_MARSHAL(ty)                                                          \
+    template <>                                                                                  \
+    struct Marshal<ty> {                                                                         \
+        using type = ty;                                                                         \
+                                                                                                 \
+        static type from(type value, const Runtime&) noexcept { return value; }                  \
+                                                                                                 \
+        static type to(type value) noexcept { return value; }                                    \
+                                                                                                 \
+        static type copy_from(const type* value, const Runtime&,                                 \
+                              std::optional<const MunTypeInfo*>) noexcept {                      \
+            return *value;                                                                       \
+        }                                                                                        \
+                                                                                                 \
+        static void move_to(type value, type* ptr, std::optional<const MunTypeInfo*>) noexcept { \
+            *ptr = std::move(value);                                                             \
+        }                                                                                        \
+                                                                                                 \
+        static type swap_at(type value, type* ptr, const Runtime&,                               \
+                            std::optional<const MunTypeInfo*>) noexcept {                        \
+            std::swap(value, *ptr);                                                              \
+            return std::move(value);                                                             \
+        }                                                                                        \
     };
 
-    template <>
-    struct Marshal<double> {
-        using type = double;
+// TODO: Add support for 128-bit integers
+IMPL_PRIMITIVE_TYPE_MARSHAL(bool);
+IMPL_PRIMITIVE_TYPE_MARSHAL(float);
+IMPL_PRIMITIVE_TYPE_MARSHAL(double);
+IMPL_PRIMITIVE_TYPE_MARSHAL(int8_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(int16_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(int32_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(int64_t);
+// IMPL_PRIMITIVE_TYPE_MARSHAL(int128_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(uint8_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(uint16_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(uint32_t);
+IMPL_PRIMITIVE_TYPE_MARSHAL(uint64_t);
+// IMPL_PRIMITIVE_TYPE_MARSHAL(uint128_t);
 
-        static double from(type value, const MunTypeInfo&) noexcept {
-            return value;
-        }
-
-        static type to(double value) noexcept {
-            return value;
-        }
-    };
-
-    template <>
-    struct Marshal<bool> {
-        using type = bool;
-
-        static bool from(type value, const MunTypeInfo&) noexcept {
-            return value;
-        }
-
-        static type to(bool value) noexcept {
-            return value;
-        }
-    };
-}
+}  // namespace mun
 
 #endif
