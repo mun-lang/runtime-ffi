@@ -24,7 +24,7 @@ class InvokeResult {
      *
      * \param success the output of a successful function invocation
      */
-    explicit InvokeResult(success_type&& success) : m_variant(std::move(success)) {}
+    explicit InvokeResult(success_type &&success) : m_variant(std::move(success)) {}
 
     /** Constructs a result from a retry callback, its arguments, and an update
      * callback.
@@ -33,7 +33,7 @@ class InvokeResult {
      * \param update_fn an update callback
      * \param args arguments for the retry_fn
      */
-    explicit InvokeResult(retry_fn_type&& retry_fn, update_fn_type&& update_fn, Args&&... args)
+    explicit InvokeResult(retry_fn_type &&retry_fn, update_fn_type &&update_fn, Args &&... args)
         : m_variant(std::tuple(std::move(retry_fn), std::move(update_fn),
                                std::tuple(std::forward<Args>(args)...))) {}
 
@@ -50,7 +50,7 @@ class InvokeResult {
      *
      * \return the output of a successful function invocation
      */
-    success_type&& unwrap() noexcept { return std::move(std::get<0>(m_variant)); }
+    success_type &&unwrap() noexcept { return std::move(std::get<0>(m_variant)); }
 
     /** Retrieves the error state of a failed function invocation.
      *
@@ -59,7 +59,7 @@ class InvokeResult {
      *
      * \return the error state
      */
-    error_type&& unwrap_err() noexcept { return std::move(std::get<1>(m_variant)); }
+    error_type &&unwrap_err() noexcept { return std::move(std::get<1>(m_variant)); }
 
     /** Retries a failed function invocation and returns the result, or
      * immediately returns on prior success.
@@ -68,7 +68,7 @@ class InvokeResult {
      *
      * \return the result of a retried function invocation
      */
-    result_type&& retry() noexcept {
+    result_type &&retry() noexcept {
         if (is_err()) {
             return std::move(retry_impl(std::make_index_sequence<sizeof...(Args)>()));
         } else {
@@ -84,7 +84,7 @@ class InvokeResult {
      *
      * \return the output of a succesful function invocation
      */
-    success_type&& wait() noexcept {
+    success_type &&wait() noexcept {
         while (is_err()) {
             *this = std::move(retry_impl(std::make_index_sequence<sizeof...(Args)>()));
         }
@@ -95,9 +95,9 @@ class InvokeResult {
     template <std::size_t... Is>
     result_type retry_impl(std::index_sequence<Is...>) {
         auto err = std::move(unwrap_err());
-        auto& retry_fn = std::get<0>(err);
-        auto& update_fn = std::get<1>(err);
-        auto& args = std::get<2>(err);
+        auto &retry_fn = std::get<0>(err);
+        auto &update_fn = std::get<1>(err);
+        auto &args = std::get<2>(err);
         while (!update_fn()) {
             // TODO: Expose a Runtime API to wait for updates
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -133,7 +133,7 @@ class InvokeResult<void, Args...> {
      * \param update_fn an update callback
      * \param args arguments for the retry_fn
      */
-    explicit InvokeResult(retry_fn_type&& retry_fn, update_fn_type&& update_fn, Args&&... args)
+    explicit InvokeResult(retry_fn_type &&retry_fn, update_fn_type &&update_fn, Args &&... args)
         : m_variant(std::tuple(std::move(retry_fn), std::move(update_fn),
                                std::tuple(std::forward<Args>(args)...))) {}
 
@@ -159,7 +159,7 @@ class InvokeResult<void, Args...> {
      *
      * \return the error state
      */
-    error_type&& unwrap_err() noexcept { return std::move(std::get<1>(m_variant)); }
+    error_type &&unwrap_err() noexcept { return std::move(std::get<1>(m_variant)); }
 
     /** Retries a failed function invocation and returns the result, or
      * immediately returns on prior success.
@@ -168,7 +168,7 @@ class InvokeResult<void, Args...> {
      *
      * \return the result of a retried function invocation
      */
-    result_type&& retry() noexcept {
+    result_type &&retry() noexcept {
         if (is_err()) {
             return retry_impl(std::make_index_sequence<sizeof...(Args)>());
         } else {
@@ -194,9 +194,9 @@ class InvokeResult<void, Args...> {
     template <std::size_t... Is>
     result_type retry_impl(std::index_sequence<Is...>) {
         auto err = std::move(unwrap_err());
-        auto& retry_fn = std::get<0>(err);
-        auto& update_fn = std::get<1>(err);
-        auto& args = std::get<2>(err);
+        auto &retry_fn = std::get<0>(err);
+        auto &update_fn = std::get<1>(err);
+        auto &args = std::get<2>(err);
         while (!update_fn()) {
             // TODO: Expose a Runtime API to wait for updates
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
