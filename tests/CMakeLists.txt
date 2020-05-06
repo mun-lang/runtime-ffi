@@ -51,7 +51,11 @@ add_custom_target(mun_test_munlibs ALL
         DEPENDS ${mun_tests})
 
 # Add the tests
-add_executable(MunRuntimeTests catch_main.cpp md5.cpp runtime.cpp)
+add_executable(MunRuntimeTests
+    catch_main.cc
+    marshal.cc
+    runtime.cc
+)
 
 target_include_directories(MunRuntimeTests PRIVATE ${MUN_FOLDER}/external/catch2/single_include ${MUN_FOLDER}/include)
 target_link_libraries(MunRuntimeTests MunRuntime)
