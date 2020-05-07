@@ -11,8 +11,9 @@ endif ()
 add_library(MunRuntime SHARED IMPORTED GLOBAL)
 
 set_target_properties(MunRuntime PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include
-        )
+    INTERFACE_INCLUDE_DIRECTORIES
+        "${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_SOURCE_DIR}/external/md5/include"
+)
 
 if (X64)
     if (WIN32)
@@ -30,12 +31,12 @@ endif ()
 
 set_target_properties(MunRuntime PROPERTIES
         IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/bin/${MUN_OS}/mun_runtime${CMAKE_SHARED_LIBRARY_SUFFIX}
-        )
+)
 
 if (WIN32)
     set_target_properties(MunRuntime PROPERTIES
-            IMPORTED_IMPLIB ${CMAKE_CURRENT_SOURCE_DIR}/bin/${MUN_OS}/mun_runtime${CMAKE_SHARED_LIBRARY_SUFFIX}.lib
-            )
+        IMPORTED_IMPLIB ${CMAKE_CURRENT_SOURCE_DIR}/bin/${MUN_OS}/mun_runtime${CMAKE_SHARED_LIBRARY_SUFFIX}.lib
+)
 endif ()
 
 include(CTest)
