@@ -1,8 +1,6 @@
 #ifndef MUN_REFLECTION_H_
 #define MUN_REFLECTION_H_
 
-#include <md5.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
@@ -10,18 +8,9 @@
 
 #include "mun/runtime_capi.h"
 #include "mun/struct_ref.h"
+#include "mun/type_info.h"
 
 namespace mun {
-namespace details {
-constexpr MunGuid type_guid(const char* type_name) noexcept {
-    const auto hash = md5::compute(type_name);
-    return MunGuid{
-        hash[0], hash[1], hash[2],  hash[3],  hash[4],  hash[5],  hash[6],  hash[7],
-        hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
-    };
-}
-}  // namespace details
-
 constexpr inline bool operator==(const MunGuid& lhs, const MunGuid& rhs) noexcept {
     for (auto idx = 0; idx < 16; ++idx) {
         if (lhs.b[idx] != rhs.b[idx]) {
@@ -68,47 +57,23 @@ inline std::optional<std::pair<const char*, const char*>> equals_return_type(
 }  // namespace reflection
 
 template <typename T>
-struct ArgumentReflection;
+struct ArgumentReflection {
+    static constexpr const char* type_name(const T&) noexcept { return TypeInfo<T>::Type.name; }
+    static constexpr MunGuid type_guid(const T&) noexcept { return TypeInfo<T>::Type.guid; }
+};
 
 template <typename T>
-struct ReturnTypeReflection;
-
-#define IMPL_PRIMITIVE_TYPE_REFLECTION(ty, name_literal)                                          \
-    template <>                                                                                   \
-    struct ReturnTypeReflection<ty> {                                                             \
-        static constexpr const char* type_name() noexcept { return name_literal; }                \
-        static constexpr MunGuid type_guid() noexcept { return details::type_guid(type_name()); } \
-    };                                                                                            \
-                                                                                                  \
-    template <>                                                                                   \
-    struct ArgumentReflection<ty> {                                                               \
-        static constexpr const char* type_name(const ty&) noexcept {                              \
-            return ReturnTypeReflection<ty>::type_name();                                         \
-        }                                                                                         \
-        static constexpr MunGuid type_guid(const ty&) noexcept {                                  \
-            return ReturnTypeReflection<ty>::type_guid();                                         \
-        }                                                                                         \
-    };
-
-IMPL_PRIMITIVE_TYPE_REFLECTION(bool, "core::bool");
-IMPL_PRIMITIVE_TYPE_REFLECTION(float, "core::f32");
-IMPL_PRIMITIVE_TYPE_REFLECTION(double, "core::f64");
-IMPL_PRIMITIVE_TYPE_REFLECTION(int8_t, "core::i8");
-IMPL_PRIMITIVE_TYPE_REFLECTION(int16_t, "core::i16");
-IMPL_PRIMITIVE_TYPE_REFLECTION(int32_t, "core::i32");
-IMPL_PRIMITIVE_TYPE_REFLECTION(int64_t, "core::i64");
-// IMPL_PRIMITIVE_TYPE_REFLECTION(int128_t, "core::i128");
-IMPL_PRIMITIVE_TYPE_REFLECTION(uint8_t, "core::u8");
-IMPL_PRIMITIVE_TYPE_REFLECTION(uint16_t, "core::u16");
-IMPL_PRIMITIVE_TYPE_REFLECTION(uint32_t, "core::u32");
-IMPL_PRIMITIVE_TYPE_REFLECTION(uint64_t, "core::u64");
-// IMPL_PRIMITIVE_TYPE_REFLECTION(uint128_t, "core::u128");
+struct ReturnTypeReflection {
+    static constexpr const char* type_name() noexcept { return TypeInfo<T>::Type.name; }
+    static constexpr MunGuid type_guid() noexcept { return TypeInfo<T>::Type.guid; }
+};
 
 template <>
 struct ReturnTypeReflection<void> {
     static constexpr const char* type_name() noexcept { return "core::empty"; }
     static constexpr MunGuid type_guid() noexcept { return details::type_guid(type_name()); }
 };
+
 }  // namespace mun
 
 #endif
