@@ -7,27 +7,6 @@
 #include <stdint.h>
 
 /**
- * Represents the privacy level of modules, functions, or variables.
- */
-enum MunPrivacy
-#ifdef __cplusplus
-  : uint8_t
-#endif // __cplusplus
- {
-    /**
-     * Publicly (and privately) accessible
-     */
-    Public = 0,
-    /**
-     * Privately accessible
-     */
-    Private = 1,
-};
-#ifndef __cplusplus
-typedef uint8_t MunPrivacy;
-#endif // __cplusplus
-
-/**
  * Represents the kind of memory management a struct uses.
  */
 enum MunStructMemoryKind
@@ -167,10 +146,6 @@ typedef MunRawGcPtr MunGcPtr;
  */
 typedef struct {
     /**
-     * Function name
-     */
-    const char *name;
-    /**
      * Argument types
      */
     const MunTypeInfo *const *arg_types;
@@ -182,14 +157,28 @@ typedef struct {
      * Number of argument types
      */
     uint16_t num_arg_types;
-    /**
-     * Function accessibility level
-     */
-    MunPrivacy privacy;
 } MunFunctionSignature;
 
 /**
- * Represents a function declaration.
+ * Represents a function prototype. A function prototype contains the name,
+ * type signature, but not an implementation.
+ *
+ * <div rustbindgen derive="Clone" derive="Debug"></div>
+ */
+typedef struct {
+    /**
+     * Function name
+     */
+    const char *name;
+    /**
+     * The type signature of the function
+     */
+    MunFunctionSignature signature;
+} MunFunctionPrototype;
+
+/**
+ * Represents a function definition. A function definition contains the name,
+ * type signature, and a pointer to the implementation.
  *
  * `fn_ptr` can be used to call the declared function.
  *
@@ -197,14 +186,14 @@ typedef struct {
  */
 typedef struct {
     /**
-     * Function signature
+     * Function prototype
      */
-    MunFunctionSignature signature;
+    MunFunctionPrototype prototype;
     /**
      * Function pointer
      */
     const void *fn_ptr;
-} MunFunctionInfo;
+} MunFunctionDefinition;
 
 /**
  * Represents a struct declaration.
@@ -345,8 +334,6 @@ MunErrorHandle mun_gc_unroot(MunRuntimeHandle handle, MunGcPtr obj);
  *
  * The runtime must be manually destructed using [`mun_runtime_destroy`].
  *
- * TODO: expose interval at which the runtime's file watcher operates.
- *
  * # Safety
  *
  * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
@@ -360,8 +347,9 @@ MunErrorHandle mun_runtime_create(const char *library_path, MunRuntimeHandle *ha
 void mun_runtime_destroy(MunRuntimeHandle handle);
 
 /**
- * Retrieves the [`FunctionInfo`] for `fn_name` from the runtime corresponding to `handle`. If
- * successful, `has_fn_info` and `fn_info` are set, otherwise a non-zero error handle is returned.
+ * Retrieves the [`FunctionDefinition`] for `fn_name` from the runtime corresponding to `handle`.
+ * If successful, `has_fn_info` and `fn_info` are set, otherwise a non-zero error handle is
+ * returned.
  *
  * If a non-zero error handle is returned, it must be manually destructed using
  * [`mun_error_destroy`].
@@ -371,10 +359,10 @@ void mun_runtime_destroy(MunRuntimeHandle handle);
  * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
  * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
-MunErrorHandle mun_runtime_get_function_info(MunRuntimeHandle handle,
-                                             const char *fn_name,
-                                             bool *has_fn_info,
-                                             MunFunctionInfo *fn_info);
+MunErrorHandle mun_runtime_get_function_definition(MunRuntimeHandle handle,
+                                                   const char *fn_name,
+                                                   bool *has_fn_info,
+                                                   MunFunctionDefinition *fn_definition);
 
 /**
  * Updates the runtime corresponding to `handle`. If successful, `updated` is set, otherwise a

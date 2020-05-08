@@ -33,19 +33,19 @@ class Runtime {
     /** Destructs a runtime */
     ~Runtime() noexcept { mun_runtime_destroy(m_handle); }
 
-    /** Retrieves `MunFunctionInfo` from the runtime for the corresponding
+    /** Retrieves `MunFunctionDefinition` from the runtime for the corresponding
      * `fn_name`.
      *
      * \param fn_name the name of the desired function
      * \param out_error a pointer that will optionally return an error
-     * \return possibly, the desired `MunFunctionInfo` struct
+     * \return possibly, the desired `MunFunctionDefinition` struct
      */
-    std::optional<MunFunctionInfo> find_function_info(std::string_view fn_name,
-                                                      Error* out_error = nullptr) noexcept {
+    std::optional<MunFunctionDefinition> find_function_definition(
+        std::string_view fn_name, Error* out_error = nullptr) noexcept {
         bool has_fn;
-        MunFunctionInfo temp;
-        if (auto error =
-                Error(mun_runtime_get_function_info(m_handle, fn_name.data(), &has_fn, &temp))) {
+        MunFunctionDefinition temp;
+        if (auto error = Error(
+                mun_runtime_get_function_definition(m_handle, fn_name.data(), &has_fn, &temp))) {
             if (out_error) {
                 *out_error = std::move(error);
             }
@@ -64,8 +64,8 @@ class Runtime {
      * \param out_error a pointer to fill with a potential error
      * \return potentially, the handle of an allocated object
      */
-    std::optional<MunGcPtr> gc_alloc(MunUnsafeTypeInfo type_info, Error* out_error = nullptr) const
-        noexcept {
+    std::optional<MunGcPtr> gc_alloc(MunUnsafeTypeInfo type_info,
+                                     Error* out_error = nullptr) const noexcept {
         MunGcPtr obj;
         if (auto error = Error(mun_gc_alloc(m_handle, type_info, &obj))) {
             if (out_error) {
