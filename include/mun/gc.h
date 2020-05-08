@@ -4,7 +4,6 @@
 #include <optional>
 
 #include "mun/error.h"
-#include "runtime.h"
 
 namespace mun {
 class Runtime;

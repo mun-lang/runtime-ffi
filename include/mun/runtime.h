@@ -6,15 +6,20 @@
 #include <string_view>
 
 #include "mun/error.h"
+#include "mun/function.h"
 #include "mun/runtime_capi.h"
 
 namespace mun {
+
+struct RuntimeOptions;
+
 /** A wrapper around a `MunRuntimeHandle`.
  *
  * Frees the corresponding runtime object on destruction, if it exists.
  */
 class Runtime {
     friend std::optional<Runtime> make_runtime(std::string_view library_path,
+                                               const RuntimeOptions& options,
                                                Error* out_error) noexcept;
 
     /** Constructs a runtime from an instantiated `MunRuntimeHandle`.
@@ -148,8 +153,21 @@ class Runtime {
     MunRuntimeHandle m_handle;
 };
 
-/** Construct a new runtime that loads the library at `library_path` and its
-dependencies.
+struct RuntimeOptions {
+    /**
+     * The interval at which changes to the disk are detected. `0` will initialize this value to
+     * default.
+     */
+    uint32_t delay_ms = 0;
+
+    /**
+     * A list of functions to add to the runtime, these functions can be called from Mun as *extern*
+     * functions.
+     */
+    std::vector<RuntimeFunction> functions;
+};
+
+/** Construct a new runtime that loads the library at `library_path` and its dependencies.
  *
  * On failure, the error is returned through the `out_error` pointer, if set.
  *
@@ -158,9 +176,29 @@ dependencies.
  * \return potentially, a runtime
 .*/
 inline std::optional<Runtime> make_runtime(std::string_view library_path,
+                                           const RuntimeOptions& options = {},
                                            Error* out_error = nullptr) noexcept {
+    std::vector<MunFunctionDefinition> function_definitions(options.functions.size());
+    for (size_t i = 0; i < options.functions.size(); ++i) {
+        auto& definition = function_definitions[i];
+        const auto& func = options.functions[i];
+        definition = MunFunctionDefinition{
+            MunFunctionPrototype{
+                func.name.c_str(),
+                MunFunctionSignature{func.arg_types.data(),
+                                     func.ret_type.has_value() ? func.ret_type.value() : nullptr,
+                                     static_cast<uint16_t>(func.arg_types.size())}},
+            func.fn_ptr};
+    }
+
+    MunRuntimeOptions runtime_options;
+    runtime_options.delay_ms = options.delay_ms;
+    runtime_options.functions =
+        function_definitions.empty() ? nullptr : function_definitions.data();
+    runtime_options.num_functions = static_cast<uint32_t>(function_definitions.size());
+
     MunRuntimeHandle handle;
-    if (auto error = Error(mun_runtime_create(library_path.data(), &handle))) {
+    if (auto error = Error(mun_runtime_create(library_path.data(), runtime_options, &handle))) {
         if (out_error) {
             *out_error = std::move(error);
         }

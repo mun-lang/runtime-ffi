@@ -55,6 +55,7 @@ add_executable(MunRuntimeTests
     catch_main.cc
     marshal.cc
     runtime.cc
+    extern.cc
 )
 
 target_include_directories(MunRuntimeTests PRIVATE ${MUN_FOLDER}/external/catch2/single_include ${MUN_FOLDER}/include)

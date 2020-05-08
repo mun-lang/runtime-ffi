@@ -10,67 +10,69 @@ inline std::string get_munlib_path(std::string_view name) {
     return ss.str();
 }
 
-#define TEST_MARSHALLING(ty, lhs, rhs, expected)                                                 \
-    TEST_CASE("function can marshal " #ty, "[marshal]") {                                        \
-        mun::Error err;                                                                          \
-        if (auto runtime = mun::make_runtime(get_munlib_path("sources/marshal.munlib"), &err)) { \
-            REQUIRE(!err);                                                                       \
-                                                                                                 \
-            const ty a = (lhs), b = (rhs);                                                       \
-            auto res = mun::invoke_fn<ty>(*runtime, "marshal_" #ty, a, b);                       \
-            REQUIRE(res.is_ok());                                                                \
-            REQUIRE(res.wait() == (expected));                                                   \
-        } else {                                                                                 \
-            REQUIRE(err);                                                                        \
-            FAIL(err.message());                                                                 \
-        }                                                                                        \
-    }                                                                                            \
-    TEST_CASE("struct can get, set, and replace " #ty, "[marshal]") {                            \
-        mun::Error err;                                                                          \
-        if (auto runtime = mun::make_runtime(get_munlib_path("sources/marshal.munlib"), &err)) { \
-            REQUIRE(!err);                                                                       \
-                                                                                                 \
-            const ty a = (lhs), b = (rhs);                                                       \
-            auto res = mun::invoke_fn<mun::StructRef>(*runtime, "new_" #ty, a, b);               \
-            REQUIRE(res.is_ok());                                                                \
-                                                                                                 \
-            auto s = res.wait();                                                                 \
-            {                                                                                    \
-                const auto first = s.get<ty>("0");                                               \
-                REQUIRE(first.has_value());                                                      \
-                REQUIRE(*first == a);                                                            \
-            }                                                                                    \
-            {                                                                                    \
-                const auto second = s.get<ty>("1");                                              \
-                REQUIRE(second.has_value());                                                     \
-                REQUIRE(*second == b);                                                           \
-            }                                                                                    \
-            REQUIRE(s.set("0", b));                                                              \
-            REQUIRE(s.set("1", a));                                                              \
-            {                                                                                    \
-                const auto first = s.replace<ty>("0", a);                                        \
-                REQUIRE(first.has_value());                                                      \
-                REQUIRE(*first == b);                                                            \
-            }                                                                                    \
-            {                                                                                    \
-                const auto second = s.replace<ty>("1", b);                                       \
-                REQUIRE(second.has_value());                                                     \
-                REQUIRE(*second == a);                                                           \
-            }                                                                                    \
-            {                                                                                    \
-                const auto first = s.get<ty>("0");                                               \
-                REQUIRE(first.has_value());                                                      \
-                REQUIRE(*first == a);                                                            \
-            }                                                                                    \
-            {                                                                                    \
-                const auto second = s.get<ty>("1");                                              \
-                REQUIRE(second.has_value());                                                     \
-                REQUIRE(*second == b);                                                           \
-            }                                                                                    \
-        } else {                                                                                 \
-            REQUIRE(err);                                                                        \
-            FAIL(err.message());                                                                 \
-        }                                                                                        \
+#define TEST_MARSHALLING(ty, lhs, rhs, expected)                                          \
+    TEST_CASE("function can marshal " #ty, "[marshal]") {                                 \
+        mun::Error err;                                                                   \
+        if (auto runtime =                                                                \
+                mun::make_runtime(get_munlib_path("sources/marshal.munlib"), {}, &err)) { \
+            REQUIRE(!err);                                                                \
+                                                                                          \
+            const ty a = (lhs), b = (rhs);                                                \
+            auto res = mun::invoke_fn<ty>(*runtime, "marshal_" #ty, a, b);                \
+            REQUIRE(res.is_ok());                                                         \
+            REQUIRE(res.wait() == (expected));                                            \
+        } else {                                                                          \
+            REQUIRE(err);                                                                 \
+            FAIL(err.message());                                                          \
+        }                                                                                 \
+    }                                                                                     \
+    TEST_CASE("struct can get, set, and replace " #ty, "[marshal]") {                     \
+        mun::Error err;                                                                   \
+        if (auto runtime =                                                                \
+                mun::make_runtime(get_munlib_path("sources/marshal.munlib"), {}, &err)) { \
+            REQUIRE(!err);                                                                \
+                                                                                          \
+            const ty a = (lhs), b = (rhs);                                                \
+            auto res = mun::invoke_fn<mun::StructRef>(*runtime, "new_" #ty, a, b);        \
+            REQUIRE(res.is_ok());                                                         \
+                                                                                          \
+            auto s = res.wait();                                                          \
+            {                                                                             \
+                const auto first = s.get<ty>("0");                                        \
+                REQUIRE(first.has_value());                                               \
+                REQUIRE(*first == a);                                                     \
+            }                                                                             \
+            {                                                                             \
+                const auto second = s.get<ty>("1");                                       \
+                REQUIRE(second.has_value());                                              \
+                REQUIRE(*second == b);                                                    \
+            }                                                                             \
+            REQUIRE(s.set("0", b));                                                       \
+            REQUIRE(s.set("1", a));                                                       \
+            {                                                                             \
+                const auto first = s.replace<ty>("0", a);                                 \
+                REQUIRE(first.has_value());                                               \
+                REQUIRE(*first == b);                                                     \
+            }                                                                             \
+            {                                                                             \
+                const auto second = s.replace<ty>("1", b);                                \
+                REQUIRE(second.has_value());                                              \
+                REQUIRE(*second == a);                                                    \
+            }                                                                             \
+            {                                                                             \
+                const auto first = s.get<ty>("0");                                        \
+                REQUIRE(first.has_value());                                               \
+                REQUIRE(*first == a);                                                     \
+            }                                                                             \
+            {                                                                             \
+                const auto second = s.get<ty>("1");                                       \
+                REQUIRE(second.has_value());                                              \
+                REQUIRE(*second == b);                                                    \
+            }                                                                             \
+        } else {                                                                          \
+            REQUIRE(err);                                                                 \
+            FAIL(err.message());                                                          \
+        }                                                                                 \
     }
 
 // TODO: Add 128-bit integers
@@ -91,7 +93,7 @@ TEST_MARSHALLING(uint64_t, 1, 64, 1 + 64);
 
 TEST_CASE("struct can get, set, and replace struct", "[marshal]") {
     mun::Error err;
-    if (auto runtime = mun::make_runtime(get_munlib_path("sources/marshal.munlib"), &err)) {
+    if (auto runtime = mun::make_runtime(get_munlib_path("sources/marshal.munlib"), {}, &err)) {
         REQUIRE(!err);
 
         float a = -3.14f, b = 6.28f;

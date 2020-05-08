@@ -196,6 +196,34 @@ typedef struct {
 } MunFunctionDefinition;
 
 /**
+ * Options required to construct a [`RuntimeHandle`] through [`mun_runtime_create`]
+ *
+ * # Safety
+ *
+ * This struct contains raw pointers as parameters. Passing pointers to invalid data, will lead to
+ * undefined behavior.
+ */
+typedef struct {
+    /**
+     * The interval at which changes to the disk are detected. `0` will initialize this value to
+     * default.
+     */
+    uint32_t delay_ms;
+    /**
+     * Function definitions that should be inserted in the runtime before a mun library is loaded.
+     * This is useful to initialize `extern` functions used in a mun library.
+     *
+     * If the [`num_functions`] fields is non-zero this field must contain a pointer to an array
+     * of [`abi::FunctionDefinition`]s.
+     */
+    const MunFunctionDefinition *functions;
+    /**
+     * The number of functions in the [`functions`] array.
+     */
+    uint32_t num_functions;
+} MunRuntimeOptions;
+
+/**
  * Represents a struct declaration.
  *
  * <div rustbindgen derive="Clone" derive="Debug"></div>
@@ -339,7 +367,9 @@ MunErrorHandle mun_gc_unroot(MunRuntimeHandle handle, MunGcPtr obj);
  * This function receives raw pointers as parameters. If any of the arguments is a null pointer,
  * an error will be returned. Passing pointers to invalid data, will lead to undefined behavior.
  */
-MunErrorHandle mun_runtime_create(const char *library_path, MunRuntimeHandle *handle);
+MunErrorHandle mun_runtime_create(const char *library_path,
+                                  MunRuntimeOptions options,
+                                  MunRuntimeHandle *handle);
 
 /**
  * Destructs the runtime corresponding to `handle`.
