@@ -26,7 +26,7 @@ TEST_CASE("runtime can find `FunctionInfo`", "[runtime]") {
         REQUIRE(!err);
         REQUIRE(runtime.has_value());
 
-        if (auto function_info = runtime->find_function_info("fibonacci", &err)) {
+        if (auto function_info = runtime->find_function_definition("fibonacci", &err)) {
             REQUIRE(!err);
         } else {
             REQUIRE(err);

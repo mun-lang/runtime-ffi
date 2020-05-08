@@ -31,13 +31,14 @@ InvokeResult<Output, Args...> invoke_fn(Runtime& runtime, std::string_view fn_na
 
     Error error;
     constexpr auto NUM_ARGS = sizeof...(Args);
-    if (auto fn_info = runtime.find_function_info(fn_name, &error); error) {
+    if (auto fn_info = runtime.find_function_definition(fn_name, &error); error) {
         std::cerr << "Failed to retrieve function info due to error: " << error.message()
                   << std::endl;
     } else if (!fn_info) {
         std::cerr << "Failed to obtain function '" << fn_name << "'" << std::endl;
     } else {
-        const auto& signature = fn_info->signature;
+        const auto& prototype = fn_info->prototype;
+        const auto& signature = prototype.signature;
         if (signature.num_arg_types != NUM_ARGS) {
             std::cerr << "Invalid number of arguments. Expected: "
                       << std::to_string(signature.num_arg_types)
