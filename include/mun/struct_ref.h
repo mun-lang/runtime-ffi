@@ -9,7 +9,6 @@
 
 #include "mun/gc.h"
 #include "mun/marshal.h"
-#include "mun/reflection.h"
 #include "mun/runtime.h"
 
 namespace mun {
@@ -96,34 +95,7 @@ class StructRef {
      * \return possibly, the value of the desired field
      */
     template <typename T>
-    std::optional<T> get(std::string_view field_name) const noexcept {
-        const auto type_info = info();
-
-        // Safety: `type_info_as_struct` is guaranteed to return a value for
-        // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info);
-        if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
-            const auto* field_type = struct_info.field_types[*idx];
-            if (auto diff = reflection::equals_return_type<T>(*field_type)) {
-                const auto& [expected, found] = *diff;
-
-                std::cerr << "Mismatched types for `"
-                          << details::format_struct_field(type_info->name, field_name)
-                          << "`. Expected: `" << expected << "`. Found: `" << found << "`."
-                          << std::endl;
-
-                return std::nullopt;
-            }
-
-            const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
-            const auto byte_ptr = reinterpret_cast<const std::byte*>(*raw());
-            return std::make_optional(Marshal<T>::copy_from(
-                reinterpret_cast<const Marshal<T>::type*>(byte_ptr + offset), *m_runtime,
-                field_type ? std::make_optional(field_type) : std::nullopt));
-        } else {
-            return std::nullopt;
-        }
-    }
+    std::optional<T> get(std::string_view field_name) const noexcept;
 
     /** Tries to replace the value of the field corresponding to
      * `field_name`, returning its original value.
@@ -132,35 +104,7 @@ class StructRef {
      * \return possibly, the value of the replaced field
      */
     template <typename T>
-    std::optional<T> replace(std::string_view field_name, T value) noexcept {
-        const auto type_info = info();
-
-        // Safety: `type_info_as_struct` is guaranteed to return a value for
-        // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info);
-        if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
-            const auto* field_type = struct_info.field_types[*idx];
-            if (auto diff = reflection::equals_return_type<T>(*field_type)) {
-                const auto& [expected, found] = *diff;
-
-                std::cerr << "Mismatched types for `"
-                          << details::format_struct_field(type_info->name, field_name)
-                          << "`. Expected: `" << expected << "`. Found: `" << found << "`."
-                          << std::endl;
-
-                return std::nullopt;
-            }
-
-            const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
-            auto byte_ptr = reinterpret_cast<std::byte*>(*raw());
-            return std::make_optional(Marshal<T>::swap_at(
-                Marshal<T>::to(std::move(value)),
-                reinterpret_cast<Marshal<T>::type*>(byte_ptr + offset), *m_runtime,
-                field_type ? std::make_optional(field_type) : std::nullopt));
-        } else {
-            return std::nullopt;
-        }
-    }
+    std::optional<T> replace(std::string_view field_name, T value) noexcept;
 
     /** Tries to set the value of the field corresponding to
      * `field_name` to the provided `value`.
@@ -170,36 +114,7 @@ class StructRef {
      * \return whether the field was set successfully
      */
     template <typename T>
-    bool set(std::string_view field_name, T value) noexcept {
-        const auto type_info = info();
-
-        // Safety: `type_info_as_struct` is guaranteed to return a value for
-        // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info);
-        if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
-            const auto* field_type = struct_info.field_types[*idx];
-            if (auto diff = reflection::equals_return_type<T>(*field_type)) {
-                const auto& [expected, found] = *diff;
-
-                std::cerr << "Mismatched types for `"
-                          << details::format_struct_field(type_info->name, field_name)
-                          << "`. Expected: `" << expected << "`. Found: `" << found << "`."
-                          << std::endl;
-
-                return false;
-            }
-
-            const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
-            auto byte_ptr = reinterpret_cast<std::byte*>(*raw());
-
-            Marshal<T>::move_to(Marshal<T>::to(std::move(value)),
-                                reinterpret_cast<Marshal<T>::type*>(byte_ptr + offset),
-                                field_type ? std::make_optional(field_type) : std::nullopt);
-            return true;
-        } else {
-            return false;
-        }
-    }
+    bool set(std::string_view field_name, T value) noexcept;
 
    private:
     const Runtime* m_runtime;
@@ -276,6 +191,11 @@ struct Marshal<StructRef> {
         return StructRef(runtime, gc_handle);
     }
 };
+}  // namespace mun
+
+#include "mun/reflection.h"
+
+namespace mun {
 
 template <>
 struct ArgumentReflection<StructRef> {
@@ -288,6 +208,97 @@ struct ReturnTypeReflection<StructRef> {
     static constexpr const char* type_name() noexcept { return "struct"; }
     static constexpr MunGuid type_guid() noexcept { return details::type_guid(type_name()); }
 };
+
+template <typename T>
+std::optional<T> StructRef::get(std::string_view field_name) const noexcept {
+    const auto type_info = info();
+
+    // Safety: `type_info_as_struct` is guaranteed to return a value for
+    // `StructRef`s.
+    const auto struct_info = *type_info_as_struct(*type_info);
+    if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
+        const auto* field_type = struct_info.field_types[*idx];
+        if (auto diff = reflection::equals_return_type<T>(*field_type)) {
+            const auto& [expected, found] = *diff;
+
+            std::cerr << "Mismatched types for `"
+                      << details::format_struct_field(type_info->name, field_name)
+                      << "`. Expected: `" << expected << "`. Found: `" << found << "`."
+                      << std::endl;
+
+            return std::nullopt;
+        }
+
+        const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
+        const auto byte_ptr = reinterpret_cast<const std::byte*>(*raw());
+        return std::make_optional(Marshal<T>::copy_from(
+            reinterpret_cast<const typename Marshal<T>::type*>(byte_ptr + offset), *m_runtime,
+            field_type ? std::make_optional(field_type) : std::nullopt));
+    } else {
+        return std::nullopt;
+    }
+}
+template <typename T>
+std::optional<T> StructRef::replace(std::string_view field_name, T value) noexcept {
+    const auto type_info = info();
+
+    // Safety: `type_info_as_struct` is guaranteed to return a value for
+    // `StructRef`s.
+    const auto struct_info = *type_info_as_struct(*type_info);
+    if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
+        const auto* field_type = struct_info.field_types[*idx];
+        if (auto diff = reflection::equals_return_type<T>(*field_type)) {
+            const auto& [expected, found] = *diff;
+
+            std::cerr << "Mismatched types for `"
+                      << details::format_struct_field(type_info->name, field_name)
+                      << "`. Expected: `" << expected << "`. Found: `" << found << "`."
+                      << std::endl;
+
+            return std::nullopt;
+        }
+
+        const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
+        auto byte_ptr = reinterpret_cast<std::byte*>(*raw());
+        return std::make_optional(Marshal<T>::swap_at(
+            Marshal<T>::to(std::move(value)),
+            reinterpret_cast<typename Marshal<T>::type*>(byte_ptr + offset), *m_runtime,
+            field_type ? std::make_optional(field_type) : std::nullopt));
+    } else {
+        return std::nullopt;
+    }
+}
+template <typename T>
+bool StructRef::set(std::string_view field_name, T value) noexcept {
+    const auto type_info = info();
+
+    // Safety: `type_info_as_struct` is guaranteed to return a value for
+    // `StructRef`s.
+    const auto struct_info = *type_info_as_struct(*type_info);
+    if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
+        const auto* field_type = struct_info.field_types[*idx];
+        if (auto diff = reflection::equals_return_type<T>(*field_type)) {
+            const auto& [expected, found] = *diff;
+
+            std::cerr << "Mismatched types for `"
+                      << details::format_struct_field(type_info->name, field_name)
+                      << "`. Expected: `" << expected << "`. Found: `" << found << "`."
+                      << std::endl;
+
+            return false;
+        }
+
+        const auto offset = static_cast<size_t>(struct_info.field_offsets[*idx]);
+        auto byte_ptr = reinterpret_cast<std::byte*>(*raw());
+
+        Marshal<T>::move_to(Marshal<T>::to(std::move(value)),
+                            reinterpret_cast<typename Marshal<T>::type*>(byte_ptr + offset),
+                            field_type ? std::make_optional(field_type) : std::nullopt);
+        return true;
+    } else {
+        return false;
+    }
+}
 }  // namespace mun
 
 #endif

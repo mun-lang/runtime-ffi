@@ -7,6 +7,7 @@
 
 #include "mun/invoke_result.h"
 #include "mun/marshal.h"
+#include "mun/reflection.h"
 #include "mun/runtime.h"
 
 namespace mun {
@@ -80,12 +81,10 @@ InvokeResult<Output, Args...> invoke_fn(Runtime& runtime, std::string_view fn_na
                       << std::endl;
 
             return make_error(runtime, fn_name, args...);
-            ;
         }
 
-        auto fn =
-            reinterpret_cast<typename Marshal<Output>::type (*)(typename Marshal<Args>::type...)>(
-                fn_info->fn_ptr);
+        auto fn = reinterpret_cast<typename Marshal<Output>::type(__cdecl*)(
+            typename Marshal<Args>::type...)>(const_cast<void*>(fn_info->fn_ptr));
         if constexpr (std::is_same_v<Output, void>) {
             fn(args...);
             return InvokeResult<Output, Args...>(std::monostate{});

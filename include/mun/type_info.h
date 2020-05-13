@@ -48,7 +48,8 @@ IMPL_PRIMITIVE_TYPE_INFO(uint64_t, "core::u64");
 // IMPL_PRIMITIVE_TYPE_REFLECTION(uint128_t, "core::u128");
 
 /**
- * Returns the MunTypeInfo that represents the type T if it is used a a return type.
+ * Returns the return type `MunTypeInfo` corresponding to type T, or none if the return type is
+ * void.
  */
 template <typename T>
 std::optional<MunTypeInfo const*> return_type_info() {
@@ -56,7 +57,8 @@ std::optional<MunTypeInfo const*> return_type_info() {
 }
 
 /**
- * Returns the MunTypeInfo that represents the type T if it is used a a return type.
+ * Returns the return type `MunTypeInfo` corresponding to type T, or none if the return type is
+ * void.
  */
 template <>
 inline std::optional<MunTypeInfo const*> return_type_info<void>() {
@@ -64,7 +66,7 @@ inline std::optional<MunTypeInfo const*> return_type_info<void>() {
 }
 
 /**
- * Returns the MunTypeInfo that represents the type T if it is used as an argument.
+ * Returns the argument type `MunTypeInfo` corresponding to type T.
  */
 template <typename T>
 MunTypeInfo const* arg_type_info() {
