@@ -7,7 +7,6 @@
 #include <optional>
 
 #include "mun/runtime_capi.h"
-#include "mun/struct_ref.h"
 #include "mun/type_info.h"
 
 namespace mun {
@@ -23,6 +22,24 @@ constexpr inline bool operator==(const MunGuid& lhs, const MunGuid& rhs) noexcep
 constexpr inline bool operator!=(const MunGuid& lhs, const MunGuid& rhs) noexcept {
     return !(lhs == rhs);
 }
+
+template <typename T>
+struct ArgumentReflection {
+    static constexpr const char* type_name(const T&) noexcept { return TypeInfo<T>::Type.name; }
+    static constexpr MunGuid type_guid(const T&) noexcept { return TypeInfo<T>::Type.guid; }
+};
+
+template <typename T>
+struct ReturnTypeReflection {
+    static constexpr const char* type_name() noexcept { return TypeInfo<T>::Type.name; }
+    static constexpr MunGuid type_guid() noexcept { return TypeInfo<T>::Type.guid; }
+};
+
+template <>
+struct ReturnTypeReflection<void> {
+    static constexpr const char* type_name() noexcept { return "core::empty"; }
+    static constexpr MunGuid type_guid() noexcept { return details::type_guid(type_name()); }
+};
 
 namespace reflection {
 template <typename T, typename U>
@@ -43,6 +60,18 @@ inline std::optional<std::pair<const char*, const char*>> equals_argument_type(
 
 template <typename T>
 inline std::optional<std::pair<const char*, const char*>> equals_return_type(
+    const MunTypeInfo& type_info) noexcept;
+
+}  // namespace reflection
+
+}  // namespace mun
+
+#include "struct_ref.h"
+
+namespace mun {
+namespace reflection {
+template <typename T>
+std::optional<std::pair<const char*, const char*>> equals_return_type(
     const MunTypeInfo& type_info) noexcept {
     if (type_info.group == MunTypeGroup::FundamentalTypes) {
         if (type_info.guid != ReturnTypeReflection<T>::type_guid()) {
@@ -55,25 +84,6 @@ inline std::optional<std::pair<const char*, const char*>> equals_return_type(
     return std::nullopt;
 }
 }  // namespace reflection
-
-template <typename T>
-struct ArgumentReflection {
-    static constexpr const char* type_name(const T&) noexcept { return TypeInfo<T>::Type.name; }
-    static constexpr MunGuid type_guid(const T&) noexcept { return TypeInfo<T>::Type.guid; }
-};
-
-template <typename T>
-struct ReturnTypeReflection {
-    static constexpr const char* type_name() noexcept { return TypeInfo<T>::Type.name; }
-    static constexpr MunGuid type_guid() noexcept { return TypeInfo<T>::Type.guid; }
-};
-
-template <>
-struct ReturnTypeReflection<void> {
-    static constexpr const char* type_name() noexcept { return "core::empty"; }
-    static constexpr MunGuid type_guid() noexcept { return details::type_guid(type_name()); }
-};
-
 }  // namespace mun
 
 #endif

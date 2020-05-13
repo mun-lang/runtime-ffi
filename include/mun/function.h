@@ -12,6 +12,11 @@ namespace mun {
  * A wrapper around a C function with type information.
  */
 struct RuntimeFunction {
+    /**
+     * Constructs a `RuntimeFunction` from a generic function pointer and a name.
+     * \param name The name of the function used when added to the runtime
+     * \param fn_ptr The function pointer to add
+     */
     template <typename TRet, typename... TArgs>
     RuntimeFunction(std::string_view name, TRet(__cdecl* fn_ptr)(TArgs...))
         : name(name),

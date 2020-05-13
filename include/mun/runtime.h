@@ -172,6 +172,7 @@ struct RuntimeOptions {
  * On failure, the error is returned through the `out_error` pointer, if set.
  *
  * \param library_path the path to a Mun library
+ * \param options Additional options used by the construction of a runtime
  * \param out_error optionally, a pointer to an `Error` instance
  * \return potentially, a runtime
 .*/
