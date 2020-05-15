@@ -47,6 +47,12 @@ IMPL_PRIMITIVE_TYPE_MARSHAL(uint32_t);
 IMPL_PRIMITIVE_TYPE_MARSHAL(uint64_t);
 // IMPL_PRIMITIVE_TYPE_MARSHAL(uint128_t);
 
+template <>
+struct Marshal<void> {
+    // The void type doesn't need to marshal anything. It merely needs to specify the type
+    using type = void;
+};
+
 }  // namespace mun
 
 #endif

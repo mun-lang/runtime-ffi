@@ -86,7 +86,7 @@ InvokeResult<Output, Args...> invoke_fn(Runtime& runtime, std::string_view fn_na
         auto fn = reinterpret_cast<typename Marshal<Output>::type(__cdecl*)(
             typename Marshal<Args>::type...)>(const_cast<void*>(fn_info->fn_ptr));
         if constexpr (std::is_same_v<Output, void>) {
-            fn(args...);
+            fn(Marshal<Args>::to(args)...);
             return InvokeResult<Output, Args...>(std::monostate{});
         } else {
             return InvokeResult<Output, Args...>(
