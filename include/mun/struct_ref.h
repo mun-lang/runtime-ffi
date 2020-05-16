@@ -2,6 +2,7 @@
 #define MUN_STRUCT_REF_H_
 
 #include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <optional>

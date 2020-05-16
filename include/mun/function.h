@@ -6,6 +6,7 @@
 
 #include "mun/runtime_capi.h"
 #include "mun/type_info.h"
+#include "mun/util.h"
 
 namespace mun {
 /**
@@ -18,7 +19,7 @@ struct RuntimeFunction {
      * \param fn_ptr The function pointer to add
      */
     template <typename TRet, typename... TArgs>
-    RuntimeFunction(std::string_view name, TRet(__cdecl* fn_ptr)(TArgs...))
+    RuntimeFunction(std::string_view name, TRet(MUN_CALLTYPE* fn_ptr)(TArgs...))
         : name(name),
           arg_types({arg_type_info<TArgs>()...}),
           ret_type(return_type_info<TRet>()),
