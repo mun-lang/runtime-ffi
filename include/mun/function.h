@@ -27,6 +27,8 @@ struct RuntimeFunction {
 
     RuntimeFunction(const RuntimeFunction&) = default;
     RuntimeFunction(RuntimeFunction&&) = default;
+    RuntimeFunction& operator=(const RuntimeFunction&) = default;
+    RuntimeFunction& operator=(RuntimeFunction&&) = default;
 
     std::string name;
     std::vector<MunTypeInfo const*> arg_types;
