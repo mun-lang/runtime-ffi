@@ -12,7 +12,7 @@
 namespace mun {
 constexpr inline bool operator==(const MunGuid& lhs, const MunGuid& rhs) noexcept {
     for (auto idx = 0; idx < 16; ++idx) {
-        if (lhs.b[idx] != rhs.b[idx]) {
+        if (lhs._0[idx] != rhs._0[idx]) {
             return false;
         }
     }
