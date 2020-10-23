@@ -39,14 +39,6 @@ inline std::string format_struct_field(std::string_view struct_name,
 }
 }  // namespace details
 
-inline std::optional<MunStructInfo> type_info_as_struct(const MunTypeInfo& type_info) noexcept {
-    if (type_info.group != MunTypeGroup::StructTypes) {
-        return std::nullopt;
-    }
-
-    return std::make_optional(*reinterpret_cast<const MunStructInfo*>(&type_info + 1));
-}
-
 inline size_t type_info_size_in_bytes(const MunTypeInfo& type_info) noexcept {
     return static_cast<size_t>((type_info.size_in_bits + 7) / 8);
 }
@@ -66,7 +58,7 @@ class StructRef {
      */
     StructRef(const Runtime& runtime, MunGcPtr raw) noexcept
         : m_runtime(&runtime), m_handle(GcRootPtr(runtime, raw)) {
-        assert(runtime.ptr_type(raw)->group == MunTypeGroup::StructTypes);
+        assert(runtime.ptr_type(raw)->data.tag == MunTypeInfoData_Tag::Struct);
     }
 
     StructRef(const StructRef&) noexcept = default;
@@ -136,7 +128,7 @@ struct Marshal<StructRef> {
                                std::optional<const MunTypeInfo*> type_info) noexcept {
         // Safety: `type_info_as_struct` is guaranteed to return a value for
         // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info.value());
+        const auto& struct_info = type_info.value()->data.struct_;
 
         MunGcPtr gc_handle;
         if (struct_info.memory_kind == MunStructMemoryKind::Value) {
@@ -158,7 +150,7 @@ struct Marshal<StructRef> {
                         std::optional<const MunTypeInfo*> type_info) noexcept {
         // Safety: `type_info_as_struct` is guaranteed to return a value for
         // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info.value());
+        const auto& struct_info = type_info.value()->data.struct_;
         if (struct_info.memory_kind == MunStructMemoryKind::Value) {
             const auto size = type_info_size_in_bytes(*type_info.value());
             // Copy the `struct(value)` into the old object
@@ -172,7 +164,7 @@ struct Marshal<StructRef> {
                              std::optional<const MunTypeInfo*> type_info) noexcept {
         // Safety: `type_info_as_struct` is guaranteed to return a value for
         // `StructRef`s.
-        const auto struct_info = *type_info_as_struct(*type_info.value());
+        const auto& struct_info = type_info.value()->data.struct_;
 
         MunGcPtr gc_handle;
         if (struct_info.memory_kind == MunStructMemoryKind::Value) {
@@ -216,7 +208,7 @@ std::optional<T> StructRef::get(std::string_view field_name) const noexcept {
 
     // Safety: `type_info_as_struct` is guaranteed to return a value for
     // `StructRef`s.
-    const auto struct_info = *type_info_as_struct(*type_info);
+    const auto& struct_info = type_info->data.struct_;
     if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
         const auto* field_type = struct_info.field_types[*idx];
         if (auto diff = reflection::equals_return_type<T>(*field_type)) {
@@ -245,7 +237,7 @@ std::optional<T> StructRef::replace(std::string_view field_name, T value) noexce
 
     // Safety: `type_info_as_struct` is guaranteed to return a value for
     // `StructRef`s.
-    const auto struct_info = *type_info_as_struct(*type_info);
+    const auto& struct_info = type_info->data.struct_;
     if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
         const auto* field_type = struct_info.field_types[*idx];
         if (auto diff = reflection::equals_return_type<T>(*field_type)) {
@@ -275,7 +267,7 @@ bool StructRef::set(std::string_view field_name, T value) noexcept {
 
     // Safety: `type_info_as_struct` is guaranteed to return a value for
     // `StructRef`s.
-    const auto struct_info = *type_info_as_struct(*type_info);
+    const auto& struct_info = type_info->data.struct_;
     if (const auto idx = details::find_index(type_info->name, struct_info, field_name)) {
         const auto* field_type = struct_info.field_types[*idx];
         if (auto diff = reflection::equals_return_type<T>(*field_type)) {
