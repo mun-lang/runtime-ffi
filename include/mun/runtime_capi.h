@@ -191,11 +191,6 @@ typedef struct {
  */
 typedef struct {
     /**
-     * The interval at which changes to the disk are detected. `0` will initialize this value to
-     * default.
-     */
-    uint32_t delay_ms;
-    /**
      * Function definitions that should be inserted in the runtime before a mun library is loaded.
      * This is useful to initialize `extern` functions used in a mun library.
      *
