@@ -1,0 +1,38 @@
+name: CI
+
+on: [pull_request, push]
+
+env:
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}.${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        build_type: ["Release", "Debug"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: create build environment
+        run: cmake -E make_directory ${{ runner.workspace }}/build
+
+      - name: configure cmake
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dmun_build_examples=OFF -Dmun_build_tests=OFF
+      
+      - name: build
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: cmake --build . --config ${{ matrix.build_type }}
+
+      - name: test
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: ctest -C ${{ matrix.build_type }}
