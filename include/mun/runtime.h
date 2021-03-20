@@ -129,7 +129,8 @@ class Runtime {
      */
     MunUnsafeTypeInfo ptr_type(MunGcPtr obj) const noexcept {
         MunUnsafeTypeInfo type_info;
-        assert(mun_gc_ptr_type(m_handle, obj, &type_info)._0 == 0);
+        const auto error_handle = mun_gc_ptr_type(m_handle, obj, &type_info)._0;
+        assert(error_handle == 0);
         return type_info;
     }
 
@@ -193,7 +194,6 @@ inline std::optional<Runtime> make_runtime(std::string_view library_path,
     }
 
     MunRuntimeOptions runtime_options;
-    runtime_options.delay_ms = options.delay_ms;
     runtime_options.functions =
         function_definitions.empty() ? nullptr : function_definitions.data();
     runtime_options.num_functions = static_cast<uint32_t>(function_definitions.size());
