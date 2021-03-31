@@ -29,7 +29,7 @@ struct TypeInfo;
             name_literal,                          \
             sizeof(ty),                            \
             std::alignment_of<ty>::value,          \
-            MunTypeGroup::FundamentalTypes,        \
+            MunTypeInfoData_Tag::Primitive,        \
         };                                         \
     }
 

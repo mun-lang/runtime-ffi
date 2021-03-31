@@ -73,7 +73,7 @@ namespace reflection {
 template <typename T>
 std::optional<std::pair<const char*, const char*>> equals_return_type(
     const MunTypeInfo& type_info) noexcept {
-    if (type_info.group == MunTypeGroup::FundamentalTypes) {
+    if (type_info.data.tag == MunTypeInfoData_Tag::Primitive) {
         if (type_info.guid != ReturnTypeReflection<T>::type_guid()) {
             return std::make_pair(type_info.name, ReturnTypeReflection<T>::type_name());
         }
