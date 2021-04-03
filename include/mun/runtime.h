@@ -89,7 +89,9 @@ class Runtime {
      */
     bool gc_collect() const noexcept {
         bool reclaimed;
-        assert(mun_gc_collect(m_handle, &reclaimed)._0 == 0);
+        auto error_handle = mun_gc_collect(m_handle, &reclaimed);
+        assert(error_handle._0 == 0);
+
         return reclaimed;
     }
 
@@ -105,7 +107,10 @@ class Runtime {
      *
      * \param obj a garbage collection handle
      */
-    void gc_root_ptr(MunGcPtr obj) const noexcept { assert(mun_gc_root(m_handle, obj)._0 == 0); }
+    void gc_root_ptr(MunGcPtr obj) const noexcept {
+        const auto error_handle = mun_gc_root(m_handle, obj);
+        assert(error_handle._0 == 0);
+    }
 
     /**
      * Unroots the specified `obj`, potentially allowing it and objects it
@@ -118,7 +123,8 @@ class Runtime {
      * \param obj a garbage collection handle
      */
     void gc_unroot_ptr(MunGcPtr obj) const noexcept {
-        assert(mun_gc_unroot(m_handle, obj)._0 == 0);
+        const auto error_handle = mun_gc_unroot(m_handle, obj);
+        assert(error_handle._0 == 0);
     }
 
     /**
@@ -129,7 +135,8 @@ class Runtime {
      */
     MunUnsafeTypeInfo ptr_type(MunGcPtr obj) const noexcept {
         MunUnsafeTypeInfo type_info;
-        assert(mun_gc_ptr_type(m_handle, obj, &type_info)._0 == 0);
+        const auto error_handle = mun_gc_ptr_type(m_handle, obj, &type_info);
+        assert(error_handle._0 == 0);
         return type_info;
     }
 
@@ -193,7 +200,6 @@ inline std::optional<Runtime> make_runtime(std::string_view library_path,
     }
 
     MunRuntimeOptions runtime_options;
-    runtime_options.delay_ms = options.delay_ms;
     runtime_options.functions =
         function_definitions.empty() ? nullptr : function_definitions.data();
     runtime_options.num_functions = static_cast<uint32_t>(function_definitions.size());

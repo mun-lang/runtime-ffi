@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - release/*
+
+env:
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.config.os }}.${{ matrix.build_type }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - { os: "ubuntu-latest", artifact-name: "linux64" }
+        - { os: "windows-latest", artifact-name: "win64" }
+        - { os: "macos-latest", artifact-name: "osx64" }
+        build_type: ["Release", "Debug"]
+    steps:
+      - name: Checkout Mun Runtime FFI
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: ffi
+
+      - name: Checkout Mun (for examples)
+        uses: actions/checkout@v2
+        with:
+          repository: mun-lang/mun
+          path: mun
+
+      - name: Create build folder
+        run: cmake -E make_directory ${{ runner.workspace }}/build
+
+      - name: Download latest successful build from mun-lang/mun
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: release.yml
+          branch: master
+          path: ${{ github.workspace }}/ffi/bin
+          repo: mun-lang/mun
+
+      - name: Resolve permissions
+        shell: bash
+        working-directory: ${{ github.workspace }}/ffi/bin
+        run: chmod +x ${{ matrix.config.artifact-name }}-*/*
+
+      - name: Move Mun binaries
+        shell: bash
+        working-directory: ${{ github.workspace }}/ffi/bin
+        run: mv ${{ matrix.config.artifact-name }}-*/* ./${{ matrix.config.artifact-name }}/
+
+      - name: Configure cmake
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: cmake -S $GITHUB_WORKSPACE/ffi -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dmun_build_examples=ON -Dmun_build_tests=ON -Dmun_executable_path=$GITHUB_WORKSPACE/ffi/bin/${{ matrix.config.artifact-name }} -Dmun_examples_path=$GITHUB_WORKSPACE/mun/examples
+      
+      - name: Build
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: cmake --build . --config ${{ matrix.build_type }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{ runner.workspace }}/build
+        run: ctest -C ${{ matrix.build_type }}

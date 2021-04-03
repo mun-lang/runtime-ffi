@@ -9,7 +9,7 @@ set(mun_examples_path "" CACHE FILEPATH "Location of the Mun example source. Thi
 add_executable(mun_binary IMPORTED)
 string(TOUPPER ${mun_os} mun_os_uppercase)
 if (mun_executable_path)
-    set_target_properties(mun_binary PROPERTIES IMPORTED_LOCATION ${mun_executable_path})
+    set_target_properties(mun_binary PROPERTIES IMPORTED_LOCATION ${mun_executable_path}/mun${CMAKE_EXECUTABLE_SUFFIX})
 elseif (mun_executable_url)
     ExternalProject_Add(
             mun_binary_download
