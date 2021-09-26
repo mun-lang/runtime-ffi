@@ -60,7 +60,7 @@ jobs:
       - name: Configure cmake
         shell: bash
         working-directory: ${{ runner.workspace }}/build
-        run: cmake -S $GITHUB_WORKSPACE/ffi -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dmun_build_examples=ON -Dmun_build_tests=ON -Dmun_executable_path=$GITHUB_WORKSPACE/ffi/bin/${{ matrix.config.artifact-name }} -Dmun_examples_path=$GITHUB_WORKSPACE/mun/examples
+        run: cmake -S $GITHUB_WORKSPACE/ffi -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dmun_build_examples=ON -Dmun_build_tests=ON -Dmun_executable_url_or_path=$GITHUB_WORKSPACE/ffi/bin/${{ matrix.config.artifact-name }} -Dmun_examples_path=$GITHUB_WORKSPACE/mun/examples
       
       - name: Build
         shell: bash
