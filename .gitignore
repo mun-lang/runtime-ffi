@@ -36,3 +36,4 @@ CMakeSettings.json
 # Build artifacts
 *.munlib
 **/target/*
+build/
