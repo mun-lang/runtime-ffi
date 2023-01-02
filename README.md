@@ -1,5 +1,9 @@
 # Mun Runtime FFI Bindings
 
+> **Warning**
+> 
+> The contents of this repository has been moved into the Mun monorepo at https://github.com/mun-lang/mun .
+
 C and C++17 bindings for the Mun Runtime.
 
 ## Testing
